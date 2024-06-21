@@ -1,4 +1,4 @@
-package chat_project;
+package com.nandu.chat_project;
 
 import java.awt.EventQueue;
 
@@ -52,17 +52,20 @@ public class Client extends JFrame {
 		
 		createWindow(); 
 		console("Attempting a connection to "+address+":"+port+" , user : "+name);
-		boolean connect = openConnection(address,port);
+		
+		boolean connect = openConnection(address);
 		if(!connect) {
 			console("Conncection Failed");
 		}
+		String connection = "/c/"+name;
+		send(connection.getBytes());
 	}
 	
 	
-	private boolean openConnection(String address , int port ) {
+	private boolean openConnection(String address) {
 		
 		try {
-			socket  = new DatagramSocket(port);
+			socket  = new DatagramSocket();
 			ip =  InetAddress.getByName(address);
 		} catch (SocketException e) {
 			e.printStackTrace();
