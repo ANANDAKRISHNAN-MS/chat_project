@@ -3,6 +3,7 @@ package com.nandu.chat_project.server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ public class Server implements Runnable{
 		this.port=port;
 		try {
 			socket = new DatagramSocket(port);
+			System.out.println("Server Started at "+port);
 		} catch (SocketException e) {
 			e.printStackTrace();
 			return;
@@ -64,12 +66,43 @@ public class Server implements Runnable{
 		};
 		receive.start();
 	}
+	
+	private void sendToAll(String message) {
+		for(int i=0;i<clients.size();i++) {
+			ServerClient client = clients.get(i);
+			send(message.getBytes(),client.address,client.port);
+		}
+	}
+	
+	private void send(final byte[] data , final InetAddress address , final int port) {
+		send = new Thread("send") {
+			public void run() {
+				DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+				try {
+					socket.send(packet);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		send.start();
+	}
+	
+	private void send(String message,InetAddress address , int port) {
+		message+="/e/"; //Shows the end of the message
+		send(message.getBytes(),address,port);
+	}
 
 	private void process(DatagramPacket packet) {
 		String string = new String(packet.getData());
 		if(string.startsWith("/c/")) {
-			clients.add(new ServerClient(string.substring(3,string.length()),packet.getAddress(),packet.getPort(),1));
+			int id  = UniqueIdentifier.getIdentifier();
+			clients.add(new ServerClient(string.substring(3,string.length()),packet.getAddress(),packet.getPort(),id));
+			String ID = "/c/" + id;
+			send(ID,packet.getAddress(),packet.getPort());
 			
+		}else if(string.startsWith("/m/")){
+			sendToAll(string);
 		}else {
 			
 		}
