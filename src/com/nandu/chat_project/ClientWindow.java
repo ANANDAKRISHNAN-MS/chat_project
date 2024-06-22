@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -41,6 +43,7 @@ public class ClientWindow extends JFrame implements Runnable{
 			console("Conncection Failed");
 			return;
 		}
+		
 		String connection = "/c/"+name;
 		client.send(connection.getBytes());
 		
@@ -89,7 +92,7 @@ private void createWindow() {
 		txtMessage.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode()== KeyEvent.VK_ENTER) {
-					send(txtMessage.getText());
+					send(txtMessage.getText(),true);
 				}
 			}
 		});
@@ -105,7 +108,7 @@ private void createWindow() {
 		JButton btnSend = new JButton("Send");
 		btnSend.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				send(txtMessage.getText());
+				send(txtMessage.getText(),true);
 			}
 		});
 		GridBagConstraints gbc_btnSend = new GridBagConstraints();
@@ -113,6 +116,14 @@ private void createWindow() {
 		gbc_btnSend.gridx = 2;
 		gbc_btnSend.gridy = 2;
 		contentPane.add(btnSend, gbc_btnSend);
+		
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				String disconnect = "/d/"+client.getID()+"/e/";
+				send(disconnect,false);
+				client.close();
+			}
+		});
 		
 		
 		txtMessage.requestFocusInWindow();
@@ -125,14 +136,15 @@ private void createWindow() {
 	}
 
 
-	public void send(String message) {
+	public void send(String message , boolean text) {
 		if(message.trim().equals("")) {
 			txtMessage.setText("");
 			return;
 		}
-		message = client.getName() + ": "+ message;
-		console(message);
-		message = "/m/"+message;
+		if(text) {
+			message = client.getName() + ": "+ message;
+			message = "/m/"+message+"/e";
+		}
 		client.send(message.getBytes());
 		txtMessage.setText("");
 		txtMessage.requestFocusInWindow();
@@ -146,8 +158,14 @@ private void createWindow() {
 					if(message.startsWith("/c/")) {
 						client.setID(Integer.parseInt(message.split("/c/|/e/")[1]));
 						console("Succesfully connected to server!");
+					}else if(message.startsWith("/m/")) {
+						String text = message.substring(3);
+						text=text.split("/e/")[0];
+						console(text);
+					}else if(message.startsWith("/p/")) {
+						String text = "/p/" + client.getID() + "/e/";
+						send(text,false);
 					}
-					
 				}
 			}
 		};

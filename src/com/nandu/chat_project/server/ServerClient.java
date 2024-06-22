@@ -10,14 +10,14 @@ public class ServerClient {
 	private final int ID;
 	public int attempt = 0;
 	
-	public ServerClient(String name, InetAddress address , int port,final int ID) {
+	public ServerClient(String name, InetAddress address , int port, final int ID) {
 		this .name=name;
 		this.address=address;
 		this.port=port;
 		this.ID=ID;
 	}
 	
-	public int getIdD() {
+	public int getID() {
 		return ID;
 	}
 }

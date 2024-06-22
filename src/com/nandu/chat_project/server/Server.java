@@ -60,7 +60,6 @@ public class Server implements Runnable{
 						e.printStackTrace();
 					}
 					process(packet);
-					clients.add(null);
 				}
 			}
 		};
@@ -103,9 +102,29 @@ public class Server implements Runnable{
 			
 		}else if(string.startsWith("/m/")){
 			sendToAll(string);
-		}else {
+		}else if (string.startsWith("/d/")) {
+			String id = string.split("/d/|/e/")[1];
+			disconnect(Integer.parseInt(id),true);
 			
 		}
+	}
+	
+	private void disconnect(int id , boolean status) {
+		ServerClient c = null;
+		for(int i=0;i<clients.size();i++) {
+			if(clients.get(i).getID() == id) {
+				c = clients.get(i);
+				clients.remove(i);
+				break;
+			}
+		}
+		String message = "";
+		if(status) {
+			message = "Client " + c.name + " (" + c.getID() + ") @ " + c.address.toString() + ":" + c.port + " disconnected";
+		}else {
+			message = "Client " + c.name + " (" + c.getID() + ") @ " + c.address.toString() + ":" + c.port + " timed out";
+		}
+		
 	}
 }
 

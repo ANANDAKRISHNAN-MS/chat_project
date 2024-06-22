@@ -83,5 +83,19 @@ public class Client {
 		
 	}
 	
+	public int getID() {
+		return this.ID;
+	}
 	
+	public void close() {
+		new Thread() {
+			public void run() {
+				synchronized(socket){
+					socket.close();
+				}
+			}
+		}.start();
+	}
+
+
 }
