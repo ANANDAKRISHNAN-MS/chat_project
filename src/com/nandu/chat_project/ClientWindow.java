@@ -177,7 +177,7 @@ private void createWindow() {
 		}
 		if(text) {
 			message = client.getName() + ": "+ message;
-			message = "/m/"+message;
+			message = "/m/"+message + "/e/";
 			txtMessage.setText("");
 			txtMessage.requestFocusInWindow();
 		}
