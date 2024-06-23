@@ -55,10 +55,40 @@ public class Server implements Runnable{
 				System.out.println("Clients");
 				System.out.println("--------------");
 				for(int i =0;i<clients.size();i++) {
-					ServerClient c  =ion clients.get(i);
+					ServerClient c  = clients.get(i);
 					System.out.println(c.name + " (" + c.getID() + ") : " + c.address.toString() + ":" + c.port);
 				}
 				System.out.println("--------------");
+			}else if(text.startsWith("kick")) {
+				String name = text.split(" ")[1];
+				int id  = -1;
+				boolean number =false;
+				try {
+					id = Integer.parseInt(name); // To check whether parameter is a number(ID) or a username
+					number=true;
+				}catch(NumberFormatException e) {
+					// number is Initialized as false
+				}
+				if(number) {
+					boolean exists = false;
+					for(int i =0 ;i<clients.size();i++) {
+						if(clients.get(i).getID() == id) {
+							exists=true;
+							break;
+						}
+					}
+					if(exists) disconnect(id,true);
+					else System.out.println("CLient" + id + "doesn't exist! Check ID number");
+				}else {
+					for(int i =0 ;i<clients.size();i++) {
+						ServerClient c  = clients.get(i);
+						if(name.equals(c.name)) {
+							disconnect(c.getID(),true);
+							break;
+						}
+					}
+				}
+				
 			}
 			
 				
@@ -70,6 +100,7 @@ public class Server implements Runnable{
 			public void run() {
 				while(running) {
 					sendToAll("/p/server");
+					sendStatus();
 					try {
 						Thread.sleep(2000);
 					} catch (InterruptedException e) {
@@ -94,6 +125,17 @@ public class Server implements Runnable{
 			}
 		};
 		manage.start();
+	}
+	
+	private void sendStatus() {
+		if(clients.size() <= 0) return;
+		String users = "/u/";
+		for(int i =0;i<clients.size() - 1;i++) {
+			users += clients.get(i).name + "/n/" ;
+		}
+		users += clients.get(clients.size()-1).name + "/e/";
+		sendToAll(users);
+		
 	}
 	
 	private void recieve() {
@@ -154,7 +196,9 @@ public class Server implements Runnable{
 		if(raw) System.out.println(string);
 		if(string.startsWith("/c/")) {
 			int id  = UniqueIdentifier.getIdentifier();
-			clients.add(new ServerClient(string.substring(3,string.length()),packet.getAddress(),packet.getPort(),id));
+			String name = string.split("/c/|/e/")[1];
+			System.out.println(name + " ( " + id + " ) connected ");
+			clients.add(new ServerClient(name,packet.getAddress(),packet.getPort(),id));
 			String ID = "/c/" + id;
 			send(ID,packet.getAddress(),packet.getPort());
 			
@@ -165,26 +209,30 @@ public class Server implements Runnable{
 			disconnect(Integer.parseInt(id),true);
 			
 		}else if(string.startsWith("/p/")) {
-			clientResponse.add(Integer.parseInt(string.split("/p/|/e/")[0]));
+			clientResponse.add(Integer.parseInt(string.split("/p/|/e/")[1]));
 			
 		}
 	}
 	
 	private void disconnect(int id , boolean status) {
 		ServerClient c = null;
+		boolean existed=false;
 		for(int i=0;i<clients.size();i++) {
 			if(clients.get(i).getID() == id) {
 				c = clients.get(i);
 				clients.remove(i);
+				existed=true;
 				break;
 			}
 		}
+		if(!existed) return;
 		String message = "";
 		if(status) {
 			message = "Client " + c.name + " (" + c.getID() + ") @ " + c.address.toString() + ":" + c.port + " disconnected";
 		}else {
 			message = "Client " + c.name + " (" + c.getID() + ") @ " + c.address.toString() + ":" + c.port + " timed out";
 		}
+		System.out.println(message);
 		
 	}
 }

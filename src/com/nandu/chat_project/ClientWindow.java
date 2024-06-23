@@ -9,6 +9,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -18,6 +19,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 
 public class ClientWindow extends JFrame implements Runnable{
 	
@@ -26,17 +30,24 @@ public class ClientWindow extends JFrame implements Runnable{
 	private JTextArea history;
 	private JPanel contentPane;
 	private JTextField txtMessage;
+	private JMenuBar menuBar;
+	private JMenu mnFile;
 	
 	private Client client;
 	
 	private Thread run,listen;
 	private boolean running = false;
 	
+	private OnlineUsers users;
+	private JMenuItem mntmUsers;
+	private JMenuItem mntmExit;
+	
+	
 	public ClientWindow(String name, String address ,int port) {
 		setTitle("Chat Client");
 		client = new Client(name,address,port);
 		createWindow(); 
-		console("Attempting a connection to "+address+":"+port+" , user : "+name);
+		console("Attempting a connection to "+address+":"+port+" User : "+name);
 		
 		boolean connect = client.openConnection(address);
 		if(!connect) {
@@ -44,8 +55,10 @@ public class ClientWindow extends JFrame implements Runnable{
 			return;
 		}
 		
-		String connection = "/c/"+name;
+		String connection = "/c/"+name+"/e/";
 		client.send(connection.getBytes());
+		
+		users = new OnlineUsers();
 		
 		running=true;
 		run = new Thread(this,"Running");
@@ -66,13 +79,28 @@ private void createWindow() {
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setVisible(true);
+		
+		menuBar = new JMenuBar();
+		setJMenuBar(menuBar);
+		
+		mnFile = new JMenu("File");
+		menuBar.add(mnFile);
+		
+		mntmUsers = new JMenuItem("Online Users");
+		mntmUsers.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				users.setVisible(true);
+			}
+		});
+		mnFile.add(mntmUsers);
+		
+		mntmExit = new JMenuItem("Exit");
+		mnFile.add(mntmExit);
 		setContentPane(contentPane);
 		
 		GridBagLayout gbl_contentPane = new GridBagLayout();
 		gbl_contentPane.columnWidths = new int[]{28,815,30,7}; //SUM=880
-		gbl_contentPane.rowHeights = new int[]{35,475,40};	//SUM=550
-		gbl_contentPane.columnWeights = new double[]{1.0, 1.0};
-		gbl_contentPane.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		gbl_contentPane.rowHeights = new int[]{25,485,40};	//SUM=550
 		contentPane.setLayout(gbl_contentPane);
 		
 		history = new JTextArea();
@@ -85,6 +113,8 @@ private void createWindow() {
 		scrollConstraints.gridy = 0;
 		scrollConstraints.gridwidth=3;
 		scrollConstraints.gridheight=2;
+		scrollConstraints.weightx=1;
+		scrollConstraints.weighty=1;
 		scrollConstraints.insets= new Insets(0,5,0,0);
 		contentPane.add(scroll, scrollConstraints);
 		
@@ -102,6 +132,8 @@ private void createWindow() {
 		gbc_txtMessage.gridx = 0;
 		gbc_txtMessage.gridy = 2;
 		gbc_txtMessage.gridwidth = 2;
+		gbc_txtMessage.weightx=1;
+		gbc_txtMessage.weighty=0;
 		contentPane.add(txtMessage, gbc_txtMessage);
 		txtMessage.setColumns(10);
 		
@@ -115,6 +147,8 @@ private void createWindow() {
 		gbc_btnSend.insets=new Insets(0,0,0,5);
 		gbc_btnSend.gridx = 2;
 		gbc_btnSend.gridy = 2;
+		gbc_btnSend.weightx=0;
+		gbc_btnSend.weighty=0;
 		contentPane.add(btnSend, gbc_btnSend);
 		
 		addWindowListener(new WindowAdapter() {
@@ -143,11 +177,12 @@ private void createWindow() {
 		}
 		if(text) {
 			message = client.getName() + ": "+ message;
-			message = "/m/"+message+"/e";
+			message = "/m/"+message;
+			txtMessage.setText("");
+			txtMessage.requestFocusInWindow();
 		}
 		client.send(message.getBytes());
-		txtMessage.setText("");
-		txtMessage.requestFocusInWindow();
+		
 	}
 	
 	public void listen() {
@@ -165,6 +200,9 @@ private void createWindow() {
 					}else if(message.startsWith("/p/")) {
 						String text = "/p/" + client.getID() + "/e/";
 						send(text,false);
+					}else if(message.startsWith("/u/")) {
+						String[] u = message.split("/u/|/n/|/e/");
+						users.update(Arrays.copyOfRange(u,1,u.length-1));
 					}
 				}
 			}
