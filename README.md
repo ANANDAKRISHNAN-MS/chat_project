@@ -1,1 +1,2 @@
-# chat_project
+
+The **GUI-Based Chat Server** is a Java application that allows users to connect to a server using an IP address and port number for real-time messaging. It features a graphical user interface built with Java Swing, supports multiple clients through multithreading, and enables seamless communication over a network using Java Sockets. The system provides a simple and efficient way for users to interact in a chat environment with authentication and message broadcasting capabilities.
